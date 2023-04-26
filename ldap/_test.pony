@@ -1,5 +1,7 @@
 use "format"
+use "debug"
 use "pony_test"
+use "pony_check"
 
 actor \nodoc\ Main is TestList
   new create(env: Env) =>
@@ -9,6 +11,8 @@ actor \nodoc\ Main is TestList
 
   fun tag tests(test: PonyTest) =>
     test(_BERSizeTests)
+    test(Property1UnitTest[U32](_BERSizePropertyTests))
+
 
 
 class \nodoc\ iso _BERSizeTests is UnitTest
@@ -37,9 +41,16 @@ class \nodoc\ iso _BERSizeTests is UnitTest
     h.assert_eq[U32](                  BERSize.decode([0x84 ; 0xFF ; 0xFF; 0xFF; 0xFF ])?, 4294967295)
 
 
+class \nodoc\ iso _BERSizePropertyTests is Property1[U32]
+  fun name(): String => "BERSizePropertyTests"
 
+  fun gen(): Generator[U32] =>
+    Generators.u32()
 
-
+  fun property(arg1: U32, ph: PropertyHelper)? =>
+    let a: Array[U8] val = BERSize.encode(arg1)
+    let b: U32 = BERSize.decode(a)?
+    ph.assert_true(arg1 == b)
 
 
 
