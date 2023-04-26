@@ -1,0 +1,14 @@
+{
+  "packages": [
+    "ldap"
+  ],
+  "deps": [],
+  "info": {
+    "description": "A pure pony implementation of a minimal ldap client",
+    "homepage": "https://github.com/redvers/pony-ldap/",
+    "license": "BSD-2-Clause",
+    "documentation_url": "https://redvers.github.io/pony-ldap",
+    "version": "0.0.0",
+    "name": "ldap"
+  }
+}
