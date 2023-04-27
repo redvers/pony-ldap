@@ -13,9 +13,9 @@ primitive BERSize
       consume t
     end
 
-	fun decode(inc: Array[U8] val): U32 ? =>
+	fun decode(inc: Array[U8] val): (U32, Array[U8] val) ? =>
 		if ((inc(0)? and 0b10000000) == 0) then
-			return inc(0)?.u32()
+			return (inc(0)?.u32(), inc.trim(1))
 		end
 		let bitwidth: USize = (inc(0)? and 0b0_1111111).usize()
 
@@ -35,4 +35,4 @@ primitive BERSize
 				retval = retval + f.u32()
 			end
     end
-		retval
+    (retval, inc.trim(bitwidth + 1))
