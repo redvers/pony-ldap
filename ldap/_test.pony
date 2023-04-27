@@ -9,13 +9,13 @@ actor \nodoc\ Main is TestList
     env = env'
     PonyTest(env, this)
 
-
 //  new make() => None
 
   fun tag tests(test: PonyTest) =>
     test(_BERSizeTests)
     test(_BERTypeBooleanTests)
     test(_BERTypeOctetStringTests)
+    test(_BERTypeIntegerTests)
     test(_BERTypeMixedTests)
     test(Property1UnitTest[U32](_BERSizePropertyTests))
 
@@ -84,6 +84,17 @@ class \nodoc\ iso _BERTypeOctetStringTests is UnitTest
 
     h.assert_array_eq[U8](BERTypeOctetString.encode("Hello!"), [ 0x04 ; 0x84 ; 0x00 ; 0x00; 0x00; 0x06 ; 0x48 ; 0x65 ; 0x6c ; 0x6c ; 0x6f ; 0x21])
 
+
+
+class \nodoc\ iso _BERTypeIntegerTests is UnitTest
+  fun name(): String => "BERTypeIntegerTests"
+  fun apply(h: TestHelper)? =>
+    h.assert_array_eq[U8](BERTypeInteger.encode(0)?, [ 0x02 ; 0x01 ; 0x00 ])
+    h.assert_array_eq[U8](BERTypeInteger.encode(50)?, [ 0x02 ; 0x01 ; 0x32 ])
+    h.assert_array_eq[U8](BERTypeInteger.encode(50000)?, [ 0x02 ; 0x03 ; 0x00 ; 0xc3 ; 0x50 ])
+    h.assert_array_eq[U8](BERTypeInteger.encode(-12345)?, [ 0x02 ; 0x02 ; 0xcf ; 0xc7 ])
+//      try display(BERTypeInteger.encode(50000)?) end
+//      try display(BERTypeInteger.encode(-12345)?) end
 
 class \nodoc\ iso _BERTypeMixedTests is UnitTest
   fun name(): String => "BERMixedTypeTests"
