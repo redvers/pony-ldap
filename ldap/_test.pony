@@ -16,6 +16,7 @@ actor \nodoc\ Main is TestList
     test(_BERSizeTests)
     test(_BERTypeBooleanTests)
     test(_BERTypeOctetStringTests)
+    test(_BERTypeMixedTests)
     test(Property1UnitTest[U32](_BERSizePropertyTests))
 
   fun display(s: Array[U8] val) =>
@@ -83,14 +84,29 @@ class \nodoc\ iso _BERTypeOctetStringTests is UnitTest
 
     h.assert_array_eq[U8](BERTypeOctetString.encode("Hello!"), [ 0x04 ; 0x84 ; 0x00 ; 0x00; 0x00; 0x06 ; 0x48 ; 0x65 ; 0x6c ; 0x6c ; 0x6f ; 0x21])
 
+
+class \nodoc\ iso _BERTypeMixedTests is UnitTest
+  fun name(): String => "BERMixedTypeTests"
+  fun apply(h: TestHelper)? =>
     let testval: Array[U8] trn = recover trn Array[U8] end
     testval.>append(BERTypeOctetString.encode("Hello "))
+    testval.>append(BERTypeNull.encode())
+    testval.>append(BERTypeBoolean.encode(true))
+    testval.>append(BERTypeNull.encode())
+    testval.>append(BERTypeBoolean.encode(false))
     testval.>append(BERTypeOctetString.encode("World"))
+
     (var a: Array[U8] val, var b: Array[U8] val) = BERTypeOctetString.decode(consume testval)?
-    (var c: Array[U8] val, var d: Array[U8] val) = BERTypeOctetString.decode(b)?
     h.assert_array_eq[U8]("Hello ".array(), a)
-    h.assert_array_eq[U8]("World".array(), c)
-    h.assert_array_eq[U8]([], d)
+    b = BERTypeNull.decode(b)?
+    (var bool: Bool, b) = BERTypeBoolean.decode(b)?
+    h.assert_true(bool)
+    b = BERTypeNull.decode(b)?
+    (bool, b) = BERTypeBoolean.decode(b)?
+    h.assert_false(bool)
+    (a, b) = BERTypeOctetString.decode(b)?
+    h.assert_array_eq[U8]("World".array(), a)
+    h.assert_array_eq[U8]([], b)
 
 
 class \nodoc\ iso _BERSizePropertyTests is Property1[U32]

@@ -35,7 +35,4 @@ primitive BERProtoExtendedResponse      fun apply(): U8 => 0x78
 primitive BERProtoIntermediateResponse  fun apply(): U8 => 0x79
 
 
-primitive BERTypeNull
-  fun encode(): Array[U8] val => [0x05 ; 0x00]
-
 
