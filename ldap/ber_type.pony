@@ -6,13 +6,6 @@ primitive BERClassPrivate     fun apply(x: U8): U8 => x and 0b11_0_00000
 primitive BERPrimitive        fun apply(x: U8): U8 => x and 0b00_0_00000
 primitive BERConstructed      fun apply(x: U8): U8 => x and 0b00_1_00000
 
-primitive BERTypeBoolean      fun apply(x: Bool): Array[U8] val =>
-    if (x == true) then
-      [0b00_0_00001 ; 0x01 ; 0xff]
-    else
-      [0b00_0_00001 ; 0x01 ; 0x00]
-    end
-
 primitive BERTypeInteger      fun apply(x: U8): U8 => x and 0b00_0_00010
 primitive BERTypeEnumerated   fun apply(x: U8): U8 => x and 0b00_0_01010
 primitive BERTypeSequence     fun apply(x: U8): U8 => x and 0b00_1_10000
@@ -45,16 +38,4 @@ primitive BERProtoIntermediateResponse  fun apply(): U8 => 0x79
 primitive BERTypeNull
   fun encode(): Array[U8] val => [0x05 ; 0x00]
 
-primitive BERTypeOctetString
-  fun encode(x: (Array[U8] val | String val)): Array[U8] val =>
-    let len: U32 = x.size().u32()
-    recover val Array[U8]
-      let t: Array[U8] trn = Array[U8](len.usize() + 5)
-      t.copy_from(BERSize.encode(len), 0, 0, 5)
-      match x
-      | let arr: Array[U8] val => t.copy_from(arr, 0, 5, len.usize())
-      | let str: String val    => t.copy_from(str.array(), 0, 5, len.usize())
-      end
-      consume t
-    end
 
