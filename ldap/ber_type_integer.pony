@@ -4,6 +4,7 @@ use "collections"
 
 primitive BERTypeInteger
   fun encode(x: I64): Array[U8] val ? =>
+//    Debug.out("Encoding: " + x.string())
     if (false) then error end
     if (x == 0) then return [ 0x02 ; 0x01 ; 0x00 ] end
 
@@ -11,6 +12,7 @@ primitive BERTypeInteger
     if (x < 0) then
       mask = 0b11111111
     end
+//    Debug.out("Mask: " + mask.string())
 
     let ax: Array[U8] trn = recover trn Array[U8].init(0, 8) end
     var bytewidth: USize = 0
@@ -20,6 +22,16 @@ primitive BERTypeInteger
       ax.update_u64(0, x.u64())?
     end
     while (bytewidth < 7) do
+      if ((mask == 255) and ((ax(bytewidth)? == 0xff)) and ((ax(bytewidth + 1)? == 0xff))) then
+//        Debug.out("Two 0xffs")
+        bytewidth = bytewidth + 1
+        continue
+      end
+//      Debug.out("bw: " + bytewidth.string() + ": " + ax(bytewidth)?.string())
+      if ((mask == 255) and ((ax(bytewidth)? == 0xff)) and ((ax(bytewidth)? and 0b10000000) == 0b10000000)) then
+//        Debug.out("Last negative field")
+        break
+      end
       if ((ax(bytewidth)? == mask)) then
         bytewidth = bytewidth + 1
         continue
@@ -35,6 +47,8 @@ primitive BERTypeInteger
     aax.push(0x02)
     aax.push(8 - bytewidth.u8())
     aax.append((consume ax).trim(bytewidth))
+//    var aaaa: Array[U8] val = consume aax
+//    display(aaaa)
     consume aax
 
   fun display(s: Array[U8] val) =>
@@ -42,9 +56,10 @@ primitive BERTypeInteger
     for f in s.values() do
       t.append(Format.int[U8](f where fmt = FormatHexBare, prec = 2) + " ")
     end
-    Debug.out(consume t)
+//    Debug.out(consume t)
 
   fun decode(inc: Array[U8] val): (I64, Array[U8] val) ? =>
+//    display(inc)
     (let len: U32, let data: Array[U8] val) = BERSize.decode(inc.trim(1))?
     let ax: Array[U8] trn = recover trn Array[U8].init(0, 8) end
     for f in Range(USize(0), len.usize()) do
@@ -56,7 +71,9 @@ primitive BERTypeInteger
       end
     end
     ifdef littleendian then
-      return ((consume ax).read_u64(0)?.bswap().i64(), data.trim(len.usize()))
+      let aaaa: I64 = (consume ax).read_u64(0)?.bswap().i64()
+//      Debug.out("Decoded:  " + aaaa.string())
+      return (aaaa, data.trim(len.usize()))
     else
       return ((consume ax).read_u64(0)?.i64(), data.trim(len.usize()))
     end
