@@ -1,5 +1,6 @@
 use "debug"
 use "format"
+use "collections"
 
 primitive BERTypeInteger
   fun encode(x: I64): Array[U8] val ? =>
@@ -18,7 +19,7 @@ primitive BERTypeInteger
     else
       ax.update_u64(0, x.u64())?
     end
-    while (bytewidth < 8) do
+    while (bytewidth < 7) do
       if ((ax(bytewidth)? == mask)) then
         bytewidth = bytewidth + 1
         continue
@@ -43,18 +44,19 @@ primitive BERTypeInteger
     end
     Debug.out(consume t)
 
-
-//    recover val Array[U8]
-//      let t: Array[U8] trn = Array[U8](len.usize() + 6)
-//      t.push(0x004)
-//      t.copy_from(BERSize.encode(len), 0, 1, 5)
-//      match x
-//      | let arr: Array[U8] val => t.copy_from(arr, 0, 6, len.usize())
-//      | let str: String val    => t.copy_from(str.array(), 0, 6, len.usize())
-//      end
-//      consume t
-//    end
-//
-//	fun decode(inc: Array[U8] val): (Array[U8] val, Array[U8] val) ? =>
-//		(var len: U32, var data: Array[U8] val) = BERSize.decode(inc.trim(1))?
-//		(data.trim(0, len.usize()), data.trim(len.usize()))
+  fun decode(inc: Array[U8] val): (I64, Array[U8] val) ? =>
+    (let len: U32, let data: Array[U8] val) = BERSize.decode(inc.trim(1))?
+    let ax: Array[U8] trn = recover trn Array[U8].init(0, 8) end
+    for f in Range(USize(0), len.usize()) do
+      ax.update((8 - len.usize()) + f, data(f)?)?
+    end
+    if ((ax(8 - len.usize())? and 0b10000000) == 0b10000000) then
+      for ff in Range(USize(0), 8 - len.usize()) do
+        ax.update(ff, 0xff)?
+      end
+    end
+    ifdef littleendian then
+      return ((consume ax).read_u64(0)?.bswap().i64(), data.trim(len.usize()))
+    else
+      return ((consume ax).read_u64(0)?.i64(), data.trim(len.usize()))
+    end

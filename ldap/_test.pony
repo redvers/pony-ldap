@@ -18,6 +18,7 @@ actor \nodoc\ Main is TestList
     test(_BERTypeIntegerTests)
     test(_BERTypeMixedTests)
     test(Property1UnitTest[U32](_BERSizePropertyTests))
+    test(Property1UnitTest[I64](_BERIntegerPropertyTests))
 
   fun display(s: Array[U8] val) =>
     let t: String trn = recover trn String end
@@ -93,8 +94,13 @@ class \nodoc\ iso _BERTypeIntegerTests is UnitTest
     h.assert_array_eq[U8](BERTypeInteger.encode(50)?, [ 0x02 ; 0x01 ; 0x32 ])
     h.assert_array_eq[U8](BERTypeInteger.encode(50000)?, [ 0x02 ; 0x03 ; 0x00 ; 0xc3 ; 0x50 ])
     h.assert_array_eq[U8](BERTypeInteger.encode(-12345)?, [ 0x02 ; 0x02 ; 0xcf ; 0xc7 ])
-//      try display(BERTypeInteger.encode(50000)?) end
-//      try display(BERTypeInteger.encode(-12345)?) end
+    h.assert_array_eq[U8](BERTypeInteger.encode(-1)?, [ 0x02 ; 0x01 ; 0xff ])
+
+    h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0x0f ; 0xfe])?._1, 4094)
+    h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0xff ; 0xfe])?._1, -2 )
+    h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x01 ; 0x0a ])?._1, 10 )
+    h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0xcf ; 0xc7 ])?._1, -12345)
+
 
 class \nodoc\ iso _BERTypeMixedTests is UnitTest
   fun name(): String => "BERMixedTypeTests"
@@ -129,6 +135,18 @@ class \nodoc\ iso _BERSizePropertyTests is Property1[U32]
   fun property(arg1: U32, ph: PropertyHelper)? =>
     let a: Array[U8] val = BERSize.encode(arg1)
     let b: U32 = BERSize.decode(a)?._1
+    ph.assert_true(arg1 == b)
+
+class \nodoc\ iso _BERIntegerPropertyTests is Property1[I64]
+  fun name(): String => "BERIntegerPropertyTests"
+
+  fun gen(): Generator[I64] =>
+    Generators.i64()
+
+  fun property(arg1: I64, ph: PropertyHelper)? =>
+    let a: Array[U8] val = BERTypeInteger.encode(arg1)?
+    let b: I64 = BERTypeInteger.decode(a)?._1
+    Debug.out("I64 test: " + arg1.string())
     ph.assert_true(arg1 == b)
 
 
