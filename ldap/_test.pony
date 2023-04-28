@@ -15,6 +15,7 @@ actor \nodoc\ Main is TestList
     test(_BERTypeOctetStringTests)
     test(_BERTypeIntegerTests)
     test(_BERTypeSequenceTests)
+    test(_BERTypeSetTests)
     test(_BERTypeMixedTests)
     test(Property1UnitTest[U32](_BERSizePropertyTests))
     test(Property1UnitTest[I64](_BERIntegerPropertyTests))
@@ -109,6 +110,14 @@ class \nodoc\ iso _BERTypeSequenceTests is UnitTest
                                                    0x01 ; 0x02 ; 0x03
                                                  ])
 
+class \nodoc\ iso _BERTypeSetTests is UnitTest
+  fun name(): String => "BERTypeSetTests"
+  fun apply(h: TestHelper) =>
+    h.assert_array_eq[U8](BERTypeSet.encode([0x01 ; 0x02 ; 0x03 ]),
+                                                 [ 0x31
+                                                   0x84 ; 0x00 ; 0x00 ; 0x00 ; 0x03
+                                                   0x01 ; 0x02 ; 0x03
+                                                 ])
 
 class \nodoc\ iso _BERTypeMixedTests is UnitTest
   fun name(): String => "BERMixedTypeTests"
