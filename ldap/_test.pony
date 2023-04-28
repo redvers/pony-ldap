@@ -16,9 +16,11 @@ actor \nodoc\ Main is TestList
     test(_BERTypeIntegerTests)
     test(_BERTypeSequenceTests)
     test(_BERTypeSetTests)
+    test(_BERTypeEnumTests)
     test(_BERTypeMixedTests)
     test(Property1UnitTest[U32](_BERSizePropertyTests))
     test(Property1UnitTest[I64](_BERIntegerPropertyTests))
+    test(Property1UnitTest[U64](_BEREnumeratedPropertyTests))
 
   fun display(s: Array[U8] val) =>
     let t: String trn = recover trn String end
@@ -99,6 +101,17 @@ class \nodoc\ iso _BERTypeIntegerTests is UnitTest
     h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0xff ; 0xfe])?._1, -2 )
     h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x01 ; 0x0a ])?._1, 10 )
     h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0xcf ; 0xc7 ])?._1, -12345)
+
+class \nodoc\ iso _BERTypeEnumTests is UnitTest
+  fun name(): String => "BERTypeEnumTests"
+  fun apply(h: TestHelper)? =>
+    h.assert_array_eq[U8](BERTypeEnumerated.encode(0)?, [ 0x0a ; 0x01 ; 0x00 ])
+    h.assert_array_eq[U8](BERTypeEnumerated.encode(2)?, [ 0x0a ; 0x01 ; 0x02 ])
+    h.assert_array_eq[U8](BERTypeEnumerated.encode(129)?, [ 0x0a ; 0x02 ; 0x00 ; 0x81])
+
+    h.assert_eq[U64](BERTypeEnumerated.decode([ 0x0a ; 0x01 ; 0x00])?._1, 0)
+    h.assert_eq[U64](BERTypeEnumerated.decode([ 0x0a ; 0x01 ; 0x0a])?._1, 10)
+    h.assert_eq[U64](BERTypeEnumerated.decode([ 0x0a ; 0x02 ; 0x00 ; 0x81])?._1, 129)
 
 
 class \nodoc\ iso _BERTypeSequenceTests is UnitTest
@@ -189,7 +202,7 @@ class \nodoc\ iso _BERIntegerPropertyTests is Property1[I64]
   fun name(): String => "BERIntegerPropertyTests"
 
   fun gen(): Generator[I64] =>
-    Generators.i64() // -68523355105413197 fails? // seed: 249975676
+    Generators.i64()
 
 //  fun params(): PropertyParams =>
 //    PropertyParams(where num_samples' = 500_000)
@@ -197,5 +210,19 @@ class \nodoc\ iso _BERIntegerPropertyTests is Property1[I64]
   fun property(arg1: I64, ph: PropertyHelper)? =>
     let a: Array[U8] val = BERTypeInteger.encode(arg1)?
     let b: I64 = BERTypeInteger.decode(a)?._1
+    ph.assert_true(arg1 == b)
+
+class \nodoc\ iso _BEREnumeratedPropertyTests is Property1[U64]
+  fun name(): String => "BEREnumeratedPropertyTests"
+
+  fun gen(): Generator[U64] =>
+    Generators.u64()
+
+//  fun params(): PropertyParams =>
+//    PropertyParams(where num_samples' = 500_000)
+
+  fun property(arg1: U64, ph: PropertyHelper)? =>
+    let a: Array[U8] val = BERTypeEnumerated.encode(arg1)?
+    let b: U64 = BERTypeEnumerated.decode(a)?._1
     ph.assert_true(arg1 == b)
 
