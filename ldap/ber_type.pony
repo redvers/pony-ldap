@@ -6,10 +6,7 @@ primitive BERClassPrivate     fun apply(x: U8): U8 => x and 0b11_0_00000
 primitive BERPrimitive        fun apply(x: U8): U8 => x and 0b00_0_00000
 primitive BERConstructed      fun apply(x: U8): U8 => x and 0b00_1_00000
 
-//primitive BERTypeInteger      fun apply(x: U8): U8 => x and 0b00_0_00010
 primitive BERTypeEnumerated   fun apply(x: U8): U8 => x and 0b00_0_01010
-primitive BERTypeSet          fun apply(x: U8): U8 => x and 0b00_1_10001
-
 
 primitive BERProtoBindRequest	          fun apply(): U8 => 0x60
 primitive BERProtoBindResponse          fun apply(): U8 => 0x61
