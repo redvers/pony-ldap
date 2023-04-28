@@ -8,7 +8,6 @@ primitive BERConstructed      fun apply(x: U8): U8 => x and 0b00_1_00000
 
 //primitive BERTypeInteger      fun apply(x: U8): U8 => x and 0b00_0_00010
 primitive BERTypeEnumerated   fun apply(x: U8): U8 => x and 0b00_0_01010
-primitive BERTypeSequence     fun apply(x: U8): U8 => x and 0b00_1_10000
 primitive BERTypeSet          fun apply(x: U8): U8 => x and 0b00_1_10001
 
 
