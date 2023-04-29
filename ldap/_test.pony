@@ -2,6 +2,7 @@ use "format"
 use "debug"
 use "pony_test"
 use "pony_check"
+use "lib:lber"
 
 actor \nodoc\ Main is TestList
   let env: Env
@@ -18,6 +19,7 @@ actor \nodoc\ Main is TestList
     test(_BERTypeSetTests)
     test(_BERTypeEnumTests)
     test(_BERTypeMixedTests)
+    test(Property1UnitTest[I32](_FFIPropertyTests))
     test(Property1UnitTest[U32](_BERSizePropertyTests))
     test(Property1UnitTest[I64](_BERIntegerPropertyTests))
     test(Property1UnitTest[U64](_BEREnumeratedPropertyTests))
@@ -94,7 +96,7 @@ class \nodoc\ iso _BERTypeIntegerTests is UnitTest
     h.assert_array_eq[U8](BERTypeInteger.encode(0)?, [ 0x02 ; 0x01 ; 0x00 ])
     h.assert_array_eq[U8](BERTypeInteger.encode(50)?, [ 0x02 ; 0x01 ; 0x32 ])
     h.assert_array_eq[U8](BERTypeInteger.encode(50000)?, [ 0x02 ; 0x03 ; 0x00 ; 0xc3 ; 0x50 ])
-    h.assert_array_eq[U8](BERTypeInteger.encode(-12345)?, [ 0x02 ; 0x03 ; 0xff ; 0xcf ; 0xc7 ])
+    h.assert_array_eq[U8](BERTypeInteger.encode(-12345)?, [ 0x02 ; 0x02 ; 0xcf ; 0xc7 ])
     h.assert_array_eq[U8](BERTypeInteger.encode(-1)?, [ 0x02 ; 0x01 ; 0xff ])
 
     h.assert_eq[I64](BERTypeInteger.decode([ 0x02 ; 0x02 ; 0x0f ; 0xfe])?._1, 4094)
@@ -204,13 +206,23 @@ class \nodoc\ iso _BERIntegerPropertyTests is Property1[I64]
   fun gen(): Generator[I64] =>
     Generators.i64()
 
-//  fun params(): PropertyParams =>
-//    PropertyParams(where num_samples' = 500_000)
+  fun params(): PropertyParams =>
+    PropertyParams(where num_samples' = 500_000)
 
   fun property(arg1: I64, ph: PropertyHelper)? =>
+//    Debug.out("Input: " + arg1.string())
     let a: Array[U8] val = BERTypeInteger.encode(arg1)?
+//    display(a)
     let b: I64 = BERTypeInteger.decode(a)?._1
+//    Debug.out("Output: " + b.string())
     ph.assert_true(arg1 == b)
+
+  fun display(s: Array[U8] val) =>
+    let t: String trn = recover trn String end
+    for f in s.values() do
+      t.append(Format.int[U8](f where fmt = FormatHexBare, prec = 2) + " ")
+    end
+    Debug.out(consume t)
 
 class \nodoc\ iso _BEREnumeratedPropertyTests is Property1[U64]
   fun name(): String => "BEREnumeratedPropertyTests"
@@ -218,11 +230,33 @@ class \nodoc\ iso _BEREnumeratedPropertyTests is Property1[U64]
   fun gen(): Generator[U64] =>
     Generators.u64()
 
-//  fun params(): PropertyParams =>
-//    PropertyParams(where num_samples' = 500_000)
+  fun params(): PropertyParams =>
+    PropertyParams(where num_samples' = 500_000)
 
   fun property(arg1: U64, ph: PropertyHelper)? =>
     let a: Array[U8] val = BERTypeEnumerated.encode(arg1)?
     let b: U64 = BERTypeEnumerated.decode(a)?._1
     ph.assert_true(arg1 == b)
+
+class \nodoc\ iso _FFIPropertyTests is Property1[I32]
+  fun name(): String => "FFITests"
+
+  fun gen(): Generator[I32] => Generators.i32()
+
+  fun params(): PropertyParams =>
+    PropertyParams(where num_samples' = 500_000)
+
+  fun property(arg1: I32, h: PropertyHelper)? =>
+    let ber: NullablePointer[_Berelement] = LdapC.ber_alloc_t(1)
+    var reti32: I32 = LdapC.ber_put_int(ber, arg1, 0x02)
+    (reti32, var bvPtr: NullablePointer[_Berval]) = LdapC.ber_flatten(ber)
+    h.assert_eq[I32](reti32, 0)
+    let bv: _Berval = bvPtr.apply()?
+    h.assert_array_eq[U8](Array[U8].from_cpointer(bv.bv_val, bv.bv_len.usize()),
+                          BERTypeInteger.encode(arg1.i64())?)
+    LdapC.ber_bvfree(bvPtr)
+    LdapC.ber_free(ber, 1)
+
+
+
 
