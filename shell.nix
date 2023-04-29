@@ -4,5 +4,6 @@ pkgs.mkShell {
     clangStdenv
     ponyc
     pony-corral
+    openldap
   ];
 }
